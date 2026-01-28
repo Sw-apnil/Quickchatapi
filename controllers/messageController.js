@@ -1,6 +1,7 @@
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 import cloudinary from "../lib/cloudinary.js";
+import {io, userSocketMap} from "../server.js";
 
 
 //Get all user except the logged in user
@@ -111,6 +112,14 @@ export const sendMessage = async (req, res) => {
     const sender = req.user._id;
 
     let imageUrl = "";
+    if (!text && !image) {
+      return res.status(400).json({
+      success: false,
+      message: "Message cannot be empty"
+      });
+    }
+
+
 
     if (image) {
       const uploadResponse = await cloudinary.uploader.upload(image);
@@ -123,6 +132,12 @@ export const sendMessage = async (req, res) => {
       text,
       image: imageUrl
     });
+
+     // Emit the new message to the receiver's socket immediately
+    const receiverSocketId = userSocketMap[receiver];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", newMessage);
+    }
 
     res.status(201).json({
       success: true,
