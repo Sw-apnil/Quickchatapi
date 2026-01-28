@@ -10,21 +10,26 @@ import cloudinary from "../lib/cloudinary.js";
 
 
 export const signup = async (req, res) => {
-  const { fullName, email, password, bio } = req.body;
   try {
-    // Check if user already exists
+    const { fullName, email, password, bio } = req.body;
+
     if (!fullName || !email || !password) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "Please fill all the fields",
       });
     }
-    const user = await User.findOne({ email });
-    if (user) {
-      return res.json({ success: false, message: "User already exists" });
+
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(409).json({
+        success: false,
+        message: "User already exists",
+      });
     }
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = await User.create({
       fullName,
       email,
@@ -33,48 +38,67 @@ export const signup = async (req, res) => {
     });
 
     const token = generateToken(newUser._id);
-    res.json({
+    newUser.password = undefined;
+
+    res.status(201).json({
       success: true,
-      newUser,
+      user: newUser,
       token,
       message: "User created successfully",
     });
+
   } catch (error) {
-    console.log(error.message);
-    res.json({
+    res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
+
 //Controller to login a user
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
     const userData = await User.findOne({ email });
-    const isPasswordCorrect = await bcrypt.compare(password, userData.password);
-    if (!isPasswordCorrect) {
-      return res.json({
+    if (!userData) {
+      return res.status(401).json({
         success: false,
         message: "Invalid credentials",
       });
     }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      userData.password
+    );
+
+    if (!isPasswordCorrect) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
     const token = generateToken(userData._id);
+    userData.password = undefined;
+
     res.json({
       success: true,
-      userData,
+      user: userData,
       token,
-      message: "User created successfully",
+      message: "Login successful",
     });
+
   } catch (error) {
-    console.log(error.message);
-    res.json({
+    res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
+
 
 //Contoller to check if user is authenticated
 
@@ -93,25 +117,31 @@ export const updateProfile = async (req, res) => {
     const { profilePic, bio, fullName } = req.body;
     const userId = req.user._id;
 
-    let updateData = { bio, fullName };
+    let updateData = {};
+    if (bio) updateData.bio = bio;
+    if (fullName) updateData.fullName = fullName;
 
     if (profilePic) {
       const uploadResponse = await cloudinary.uploader.upload(profilePic);
       updateData.profilePic = uploadResponse.secure_url;
     }
 
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true }
+    );
 
-    res.json({
+    updatedUser.password = undefined;
+
+    res.status(200).json({
       success: true,
       user: updatedUser,
       message: "User updated successfully",
     });
+
   } catch (error) {
-    console.log(error.message);
-    res.json({
+    res.status(500).json({
       success: false,
       message: error.message,
     });
