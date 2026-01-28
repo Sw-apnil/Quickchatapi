@@ -153,3 +153,38 @@ export const sendMessage = async (req, res) => {
   }
 };
 
+
+// api to delete a message 
+
+export const deleteMessage = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id } = req.params;
+    const message = await Message.findById(id);
+    if (!message) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Message not found" });
+    }
+    if (String(message.sender) !== String(userId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to delete this message",
+      });
+    }
+    message.deleted = true;
+    message.text = "This message was deleted";
+    message.image = "";
+    await message.save();
+    // Emit update to both sender and receiver
+    const senderSocketId = userSocketMap[message.sender];
+    const receiverSocketId = userSocketMap[message.receiver];
+    if (senderSocketId) io.to(senderSocketId).emit("messageDeleted", message);
+    if (receiverSocketId)
+      io.to(receiverSocketId).emit("messageDeleted", message);
+    res.json({ success: true, message: "Message deleted", data: message });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
