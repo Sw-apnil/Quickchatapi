@@ -1,6 +1,6 @@
 //Signup a new user
 import User from "../models/User.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { generateToken } from "../lib/utils.js";
 import cloudinary from "../lib/cloudinary.js";

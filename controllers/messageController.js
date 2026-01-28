@@ -102,3 +102,39 @@ export const markMessagesAsSeen = async (req, res) => {
     });
   }
 };
+
+//send message to slected user
+export const sendMessage = async (req, res) => {
+  try {
+    const { text, image } = req.body;
+    const receiver = req.params.id;
+    const sender = req.user._id;
+
+    let imageUrl = "";
+
+    if (image) {
+      const uploadResponse = await cloudinary.uploader.upload(image);
+      imageUrl = uploadResponse.secure_url;
+    }
+
+    const newMessage = await Message.create({
+      sender,
+      receiver,
+      text,
+      image: imageUrl
+    });
+
+    res.status(201).json({
+      success: true,
+      newMessage
+    });
+
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
