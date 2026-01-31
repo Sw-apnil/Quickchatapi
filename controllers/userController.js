@@ -1,4 +1,4 @@
-//Signup a new user
+
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -8,7 +8,7 @@ import cloudinary from "../lib/cloudinary.js";
 
 
 
-
+//Signup a new user
 export const signup = async (req, res) => {
   try {
     const { fullName, email, password, bio } = req.body;
