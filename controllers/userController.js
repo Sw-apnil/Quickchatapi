@@ -42,10 +42,11 @@ export const signup = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      user: newUser,
+      userData: newUser,
       token,
       message: "User created successfully",
     });
+
 
   } catch (error) {
     res.status(500).json({
@@ -85,11 +86,12 @@ export const login = async (req, res) => {
     userData.password = undefined;
 
     res.json({
-      success: true,
-      user: userData,
-      token,
-      message: "Login successful",
-    });
+    success: true,
+    userData: userData,
+    token,
+    message: "Login successful",
+});
+
 
   } catch (error) {
     res.status(500).json({
@@ -105,7 +107,7 @@ export const login = async (req, res) => {
 export const checkAuth = (req, res) => {
   res.json({
     success: true,
-    user: req.user,
+    userData: req.user,
   });
 };
 
@@ -136,7 +138,7 @@ export const updateProfile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      user: updatedUser,
+      userData: updatedUser,
       message: "User updated successfully",
     });
 
